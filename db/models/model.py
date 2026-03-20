@@ -13,8 +13,10 @@ class User(Base):
     full_name = Column(String, nullable=False)
     email = Column(String, unique=True,nullable=False)
     password = Column(String, nullable=False)
+    role = Column(String, default="user")
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    refresh_tokens = relationship("RefreshTokenDB", back_populates="user")
     projects = relationship("Project", back_populates="owner")
     __table_args__ = (Index('idx_full_name_password_email', full_name,password,email),)
 

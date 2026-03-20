@@ -36,6 +36,14 @@ class ProjectOut(BaseModel):
     title: str
     description: Optional[str]=None
     model_config = ConfigDict(from_attributes=True)
+class UserSimpleOut(BaseModel):
+    id: int
+    full_name: str
+    email: str
+    created_at: Optional[datetime]=None
+    is_active: bool=True
+
+    model_config = ConfigDict(from_attributes=True)
 class UserOut(BaseModel):
      id:int
      full_name: str

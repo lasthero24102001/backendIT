@@ -1,9 +1,23 @@
 services:
   db:
     image: postgres:15-alpine
+    container_name: tz1-db
     environment:
-        - POSTGRES_USER=repository1
-        - POSTGRES_PASSWORD=lasthero2028
-        - POSTGRES_DB=backend_lasthero1
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     ports:
-      - "5432:5432"
+      - "5433:5432"
+    volumes:
+      - tz1_postgres_data:/var/lib/postgresql/data
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    container_name: tz1-redis
+    ports:
+      - "6380:6379"  # Тот самый порт 6380, который мы выбрали
+    restart: always
+
+volumes:
+  tz1_postgres_data:
