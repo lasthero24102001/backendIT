@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Boolean,Index,ForeignKey, DateTime
 from sqlalchemy.orm import relationship,declarative_base
-from datetime import datetime
+from datetime import datetime,timezone
 
 Base = declarative_base()
 
@@ -15,10 +15,13 @@ class User(Base):
     password = Column(String, nullable=False)
     role = Column(String, default="user")
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
+    )
     refresh_tokens = relationship("RefreshTokenDB", back_populates="user")
     projects = relationship("Project", back_populates="owner")
-    __table_args__ = (Index('idx_full_name_password_email', full_name,password,email),)
+    __table_args__ = (Index('idx_full_name_email', full_name,email),)
 
 
 
@@ -40,5 +43,5 @@ class RefreshTokenDB(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     expires_at = Column(DateTime, nullable=False)
     is_revoked = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now(timezone.utc))
     user = relationship("User", back_populates="refresh_tokens")
