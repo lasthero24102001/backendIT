@@ -1,4 +1,5 @@
 import traceback
+
 import redis.asyncio as redis
 from fastapi_limiter import FastAPILimiter
 from fastapi_limiter.depends import RateLimiter
@@ -16,11 +17,11 @@ from db.service.services import AuthService
 from jose import jwt,JWTError
 from db.tokens.token import create_access_token, create_refresh_token, save_refresh_token, validate_refresh_token
 
+from fastapi.middleware.cors import CORSMiddleware
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Создаем подключение к Redis на порту 6380
-    # Параметр decode_responses=True критически важен для лимитера!
     redis_instance = redis.from_url(
         "redis://localhost:6380",
         encoding="utf-8",
@@ -33,12 +34,23 @@ async def lifespan(app: FastAPI):
     print("--- REDIS RATE LIMITER ГОТОВ (Порт 6380) ---")
 
     yield
-
-    # Закрываем соединение при выключении сервера
     await redis_instance.close()
 
 
 app = FastAPI(lifespan=lifespan)
+origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000"
+]
+
+# 2. Добавляем Middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 add_pagination(app)
 
 @app.exception_handler(Exception)
@@ -60,6 +72,7 @@ async def login_users(form_data:OAuth2PasswordRequestForm=Depends(),db:AsyncSess
     new_user=await auth.login_user(form_data.username,form_data.password)
     new_access_token=create_access_token(user_id=new_user.id,role=new_user.role)
     new_refresh_token=create_refresh_token(user_id=new_user.id,role=new_user.role)
+    await save_refresh_token(db,refresh_token=new_refresh_token,user_id=new_user.id)
     return {"access_token":new_access_token,"refresh_token":new_refresh_token,'token_type':'Bearer'}
 @app.post('/refresh/users',response_model=TokenResponse)
 async def refresh(data:RefreshToken,db:AsyncSession=Depends(get_db)):
